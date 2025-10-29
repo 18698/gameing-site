@@ -1,18 +1,55 @@
 <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JSNES Emulator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+    canvas {
+      border: 1px solid #000;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>JSNES Emulator</h1>
+  <p>Load a ROM file to start playing!</p>
+  <input type="file" id="romInput" accept=".nes" />
+  <canvas id="screen" width="256" height="240"></canvas>
+  <script src="https://unpkg.com/jsnes/dist/jsnes.min.js"></script>
+  <script>
+    const nes = new jsnes.NES({
+      onFrame: function(frameBuffer) {
+        const canvas = document.getElementById("screen");
+        const ctx = canvas.getContext("2d");
+        const imageData = ctx.createImageData(256, 240);
+        for (let i = 0; i < frameBuffer.length; i++) {
+          imageData.data[i * 4 + 0] = (frameBuffer[i] >> 16) & 0xff; // Red
+          imageData.data[i * 4 + 1] = (frameBuffer[i] >> 8) & 0xff;  // Green
+          imageData.data[i * 4 + 2] = frameBuffer[i] & 0xff;         // Blue
+          imageData.data[i * 4 + 3] = 0xff;                         // Alpha
+        }
+        ctx.putImageData(imageData, 0, 0);
+      }
+    });
 
-<html>
-	<head>
-		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-		<title>Embedding Example</title>
-		
-		<script type="text/javascript" src="https://unpkg.com/jsnes/dist/jsnes.min.js"></script>
-		<script type="text/javascript" src="nes-embed.js"></script>
-		<script>window.onload = function(){nes_load_url("nes-canvas", "smb.nes");}</script>
-	</head>
-	<body>
-		<div style="margin: auto; width: 75%;">
-			<canvas id="nes-canvas" width="256" height="240" style="width: 100%"/>
-		</div>
-		<p>DPad: Arrow keys<br/>Start: Return, Select: Tab<br/>A Button: A, B Button: S</p>
-	</body>
+    document.getElementById("romInput").addEventListener("change", function(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function() {
+          nes.loadROM(reader.result);
+          nes.start();
+        };
+        reader.readAsBinaryString(file);
+      }
+    });
+  </script>
+</body>
 </html>
